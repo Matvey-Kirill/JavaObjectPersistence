@@ -1,28 +1,7 @@
 package main.utils.print;
 
-public class MultiCharMapper implements CharMapper {
+public class MultiCharMapper {
     private CharMapper[] mappers;
-
-    public MultiCharMapper() {
-        this.mappers = null;
-    }
-
-    public MultiCharMapper(CharMapper... mappers) {
-        this.mappers = mappers;
-    }
-
-    public void addCharMapper(CharMapper mapper) {
-        if (this.mappers == null) {
-            this.mappers = new CharMapper[]{mapper};
-        } else {
-            int n = this.mappers.length;
-            CharMapper[] newArray = new CharMapper[n + 1];
-            System.arraycopy(this.mappers, 0, newArray, 0, n);
-            newArray[n] = mapper;
-            this.mappers = newArray;
-        }
-
-    }
 
     public String map(int codePoint) {
         if (this.mappers != null) {

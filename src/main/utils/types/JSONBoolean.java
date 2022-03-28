@@ -13,10 +13,6 @@ public class JSONBoolean implements JSONValue {
         this.value = value;
     }
 
-    public JSONBoolean(Boolean value) {
-        this.value = (Boolean)Objects.requireNonNull(value);
-    }
-
     public boolean get() {
         return this.value;
     }

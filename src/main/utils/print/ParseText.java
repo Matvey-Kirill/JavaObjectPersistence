@@ -1,23 +1,9 @@
 package main.utils.print;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-
 public class ParseText {
     private CharSequence text;
     private int index;
     private int start;
-    private static final int MAX_INT_DIV_10 = 214748364;
-    private static final int MAX_INT_MOD_10 = 7;
-    private static final long MAX_LONG_DIV_10 = 922337203685477580L;
-    private static final int MAX_LONG_MOD_10 = 7;
-    private static final int MAX_INT_MASK = -134217728;
-    private static final long MAX_LONG_MASK = -576460752303423488L;
-
-    public ParseText(CharSequence text, int index) {
-        this.setText(text, index);
-    }
 
     public ParseText(CharSequence text) {
         this.setText(text, 0);
@@ -32,19 +18,6 @@ public class ParseText {
             this.start = index;
             return this;
         }
-    }
-
-    public ParseText setText(CharSequence text) {
-        this.setText(text, 0);
-        return this;
-    }
-
-    public CharSequence getText() {
-        return this.text;
-    }
-
-    public int getTextLength() {
-        return this.text.length();
     }
 
     public boolean isExhausted() {
@@ -64,36 +37,12 @@ public class ParseText {
         }
     }
 
-    protected boolean matchSuccess(int i) {
-        this.start = this.index;
-        this.index = i;
-        return true;
-    }
-
     public char getChar() {
         this.start = this.index;
         if (this.index >= this.text.length()) {
             throw new StringIndexOutOfBoundsException("ParseText exhausted");
         } else {
             return this.text.charAt(this.index++);
-        }
-    }
-
-    public int getCodePoint() {
-        this.start = this.index;
-        if (this.index >= this.text.length()) {
-            throw new StringIndexOutOfBoundsException("ParseText exhausted");
-        } else {
-            char ch = this.text.charAt(this.index++);
-            if (Character.isHighSurrogate(ch) && this.index < this.text.length()) {
-                char ch2 = this.text.charAt(this.index);
-                if (Character.isLowSurrogate(ch2)) {
-                    ++this.index;
-                    return Character.toCodePoint(ch, ch2);
-                }
-            }
-
-            return ch;
         }
     }
 
@@ -190,10 +139,6 @@ public class ParseText {
         }
     }
 
-    public long getResultHexLong() {
-        return this.getHexLong(this.start, this.index);
-    }
-
     public long getHexLong(int from, int to) {
         if (to <= from) {
             throw new NumberFormatException();
@@ -232,57 +177,12 @@ public class ParseText {
         return this.text.charAt(this.start);
     }
 
-    public String getResultString() {
-        return this.text.subSequence(this.start, this.index).toString();
-    }
-
-    public StringBuilder appendResultTo(StringBuilder sb) {
-        return sb.append(this.text, this.start, this.index);
-    }
-
-    public Appendable appendResultTo(Appendable a) throws IOException {
-        return a.append(this.text, this.start, this.index);
-    }
-
     public boolean available(int len) {
         return this.index + len <= this.text.length();
     }
 
     public int length() {
         return this.text.length();
-    }
-
-    public char charAt(int index) {
-        return this.text.charAt(index);
-    }
-
-    public boolean match(int cp) {
-        int i = this.index;
-        if (i >= this.text.length()) {
-            return false;
-        } else {
-            char ch = this.text.charAt(i++);
-            if (Character.isHighSurrogate(ch)) {
-                if (i >= this.text.length()) {
-                    return false;
-                }
-
-                char ch2 = this.text.charAt(i++);
-                if (!Character.isLowSurrogate(ch2)) {
-                    return false;
-                }
-
-                if (Character.toCodePoint(ch, ch2) != cp) {
-                    return false;
-                }
-            } else if (ch != cp) {
-                return false;
-            }
-
-            this.start = this.index;
-            this.index = i;
-            return true;
-        }
     }
 
     public boolean match(char ch) {
@@ -305,31 +205,6 @@ public class ParseText {
 
     private static boolean equalIgnoreCase(char a, char b) {
         return a == b || a == (Character.isLowerCase(a) ? Character.toLowerCase(b) : Character.toUpperCase(b));
-    }
-
-    public boolean matchRange(char from, char to) {
-        if (this.index >= this.text.length()) {
-            return false;
-        } else {
-            char ch = this.text.charAt(this.index);
-            if (ch >= from && ch <= to) {
-                this.start = this.index++;
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    public boolean matchAnyOf(String str) {
-        if (this.index >= this.text.length()) {
-            return false;
-        } else if (str.indexOf(this.text.charAt(this.index)) < 0) {
-            return false;
-        } else {
-            this.start = this.index++;
-            return true;
-        }
     }
 
     public boolean matchAnyOf(char... array) {
@@ -394,58 +269,6 @@ public class ParseText {
         }
     }
 
-    public boolean matchAnyOf(CharSequence... array) {
-        if (array.length == 0) {
-            throw new IllegalArgumentException("Array must not be empty");
-        } else {
-            CharSequence[] var2 = array;
-            int var3 = array.length;
-
-            for(int var4 = 0; var4 < var3; ++var4) {
-                CharSequence str = var2[var4];
-                if (this.match(str)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
-    public boolean matchAnyOf(Collection<? extends CharSequence> collection) {
-        Iterator var2 = collection.iterator();
-
-        CharSequence str;
-        do {
-            if (!var2.hasNext()) {
-                return false;
-            }
-
-            str = (CharSequence)var2.next();
-        } while(!this.match(str));
-
-        return true;
-    }
-
-    public boolean matchIgnoreCase(CharSequence target) {
-        int len = target.length();
-        if (this.index + len > this.text.length()) {
-            return false;
-        } else {
-            int i = this.index;
-
-            for(int var4 = 0; len > 0; --len) {
-                if (!equalIgnoreCase(this.text.charAt(i++), target.charAt(var4++))) {
-                    return false;
-                }
-            }
-
-            this.start = this.index;
-            this.index = i;
-            return true;
-        }
-    }
-
     public boolean matchDec(int maxDigits, int minDigits) {
         int i = this.index;
         int stopper = this.text.length();
@@ -498,142 +321,10 @@ public class ParseText {
         }
     }
 
-    public boolean matchHex(int maxDigits) {
-        return this.matchHex(maxDigits, 1);
-    }
-
-    public boolean matchHex() {
-        return this.matchHex(0, 1);
-    }
-
     public boolean matchHexFixed(int numDigits) {
         return this.matchHex(numDigits, numDigits);
     }
 
-    public ParseText revert() {
-        this.index = this.start;
-        return this;
-    }
-
-    public ParseText reset() {
-        this.index = 0;
-        return this;
-    }
-
-    public ParseText skip(int n) {
-        this.start = this.index;
-        this.setIndex(this.index + n);
-        return this;
-    }
-
-    public ParseText back(int n) {
-        this.setIndex(this.index - n);
-        return this;
-    }
-
-    public ParseText skipTo(char ch) {
-        int i = this.index;
-
-        for(this.start = i; i < this.text.length() && this.text.charAt(i) != ch; ++i) {
-        }
-
-        this.index = i;
-        return this;
-    }
-
-    public ParseText skipToAnyOf(char... array) {
-        if (array.length == 0) {
-            throw new IllegalArgumentException("Array must not be empty");
-        } else {
-            int i = this.index;
-
-            label26:
-            for(this.start = i; i < this.text.length(); ++i) {
-                char ch = this.text.charAt(i);
-
-                for(int j = 0; j < array.length; ++j) {
-                    if (ch == array[j]) {
-                        break label26;
-                    }
-                }
-            }
-
-            this.index = i;
-            return this;
-        }
-    }
-
-    public ParseText skipToAnyOf(CharSequence stoppers) {
-        if (stoppers.length() == 0) {
-            throw new IllegalArgumentException("String must not be empty");
-        } else {
-            int i = this.index;
-
-            label26:
-            for(this.start = i; i < this.text.length(); ++i) {
-                char ch = this.text.charAt(i);
-
-                for(int j = 0; j < stoppers.length(); ++j) {
-                    if (ch == stoppers.charAt(j)) {
-                        break label26;
-                    }
-                }
-            }
-
-            this.index = i;
-            return this;
-        }
-    }
-
-    public ParseText skipTo(CharSequence target) {
-        int len = target.length();
-        int i = this.index;
-        this.start = i;
-        int stopper = this.text.length() - len;
-
-        label24:
-        while(true) {
-            if (i > stopper) {
-                i = this.text.length();
-                break;
-            }
-
-            int j = 0;
-
-            while(true) {
-                if (j >= len) {
-                    break label24;
-                }
-
-                if (this.text.charAt(i + j) != target.charAt(j)) {
-                    ++i;
-                    break;
-                }
-
-                ++j;
-            }
-        }
-
-        this.index = i;
-        return this;
-    }
-
-    public boolean matchSpaces() {
-        int i = this.index;
-        int len = this.text.length();
-        if (i < len && this.isSpace(this.text.charAt(i))) {
-            this.start = i;
-
-            do {
-                ++i;
-            } while(i < len && this.isSpace(this.text.charAt(i)));
-
-            this.index = i;
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     public ParseText skipSpaces() {
         int i = this.index;
@@ -644,40 +335,6 @@ public class ParseText {
 
         this.index = i;
         return this;
-    }
-
-    public ParseText skipToSpace() {
-        int i = this.index;
-        this.start = i;
-
-        for(int len = this.text.length(); i < len && !this.isSpace(this.text.charAt(i)); ++i) {
-        }
-
-        this.index = i;
-        return this;
-    }
-
-    public ParseText skipToEnd() {
-        this.start = this.index;
-        this.index = this.text.length();
-        return this;
-    }
-
-    public boolean matchName() {
-        int i = this.index;
-        int len = this.text.length();
-        if (i < len && this.isNameStart(this.text.charAt(i))) {
-            this.start = i;
-
-            do {
-                ++i;
-            } while(i < len && this.isNameContinuation(this.text.charAt(i)));
-
-            this.index = i;
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public boolean isSpace(char ch) {

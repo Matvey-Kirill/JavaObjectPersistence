@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 public class ByteArrayBuilder {
-    public static final int MINIMUM_READ_BUFFER_SIZE = 4096;
     private byte[] buf;
     private int count;
     private int increment;
@@ -26,49 +25,12 @@ public class ByteArrayBuilder {
         this(size, Math.max(size / 2, 1));
     }
 
-    public ByteArrayBuilder() {
-        this(20);
-    }
-
-    public ByteArrayBuilder(byte[] array) {
-        this(array != null ? array.length : 20);
-        this.append(array);
-    }
-
-    public ByteArrayBuilder(ByteArrayBuilder bab) {
-        this(bab != null ? bab.length() : 20);
-        this.append(bab);
-    }
-
     public int length() {
         return this.count;
     }
 
     public byte[] toByteArray() {
         return Arrays.copyOf(this.buf, this.count);
-    }
-
-    public byte[] toByteArray(int start) {
-        if (start >= 0 && start <= this.count) {
-            return this.copyOf(start, this.count);
-        } else {
-            throw new IndexOutOfBoundsException("start=" + start + "; count=" + this.count);
-        }
-    }
-
-    public byte[] toByteArray(int start, int end) {
-        if (start >= 0 && start <= end && end <= this.count) {
-            return this.copyOf(start, end);
-        } else {
-            throw new IndexOutOfBoundsException("start=" + start + "; end=" + end + "; count=" + this.count);
-        }
-    }
-
-    private byte[] copyOf(int start, int end) {
-        int n = end - start;
-        byte[] result = new byte[n];
-        System.arraycopy(this.buf, start, result, 0, n);
-        return result;
     }
 
     public byte set(int index, int value) {
@@ -161,66 +123,5 @@ public class ByteArrayBuilder {
         }
 
         return this;
-    }
-
-    public ByteArrayBuilder insert(int index, int b) {
-        if (index >= 0 && index <= this.count) {
-            this.ensureCapacity(this.count + 1);
-            if (index < this.count) {
-                System.arraycopy(this.buf, index, this.buf, index + 1, this.count - index);
-            }
-
-            this.buf[index] = (byte)b;
-            ++this.count;
-            return this;
-        } else {
-            throw new IndexOutOfBoundsException("index=" + index + "; count=" + this.count);
-        }
-    }
-
-    public ByteArrayBuilder insert(int index, byte[] array) {
-        if (index >= 0 && index <= this.count) {
-            if (array != null) {
-                int n = array.length;
-                this.ensureCapacity(this.count + n);
-                if (index < this.count) {
-                    System.arraycopy(this.buf, index, this.buf, index + n, this.count - index);
-                }
-
-                System.arraycopy(array, 0, this.buf, index, n);
-                this.count += n;
-            }
-
-            return this;
-        } else {
-            throw new IndexOutOfBoundsException("index=" + index + "; count=" + this.count);
-        }
-    }
-
-    public ByteArrayBuilder insert(int index, ByteArrayBuilder bab) {
-        if (index >= 0 && index <= this.count) {
-            if (bab != null) {
-                int n = bab.count;
-                this.ensureCapacity(this.count + n);
-                if (index < this.count) {
-                    System.arraycopy(this.buf, index, this.buf, index + n, this.count - index);
-                }
-
-                System.arraycopy(bab.buf, 0, this.buf, index, n);
-                this.count += n;
-            }
-
-            return this;
-        } else {
-            throw new IndexOutOfBoundsException("index=" + index + "; count=" + this.count);
-        }
-    }
-
-    public ByteArrayBuilder create() {
-        return new ByteArrayBuilder();
-    }
-
-    public ByteArrayBuilder create(int size) {
-        return new ByteArrayBuilder(size);
     }
 }

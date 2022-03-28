@@ -138,10 +138,6 @@ public class ListMap<K, V> implements Map<K, V>, Serializable {
         }
     }
 
-    public ListMap.Entry<K, V> getEntry(int index) {
-        return (ListMap.Entry)this.list.get(index);
-    }
-
     protected int findIndex(Object key) {
         int i = 0;
 

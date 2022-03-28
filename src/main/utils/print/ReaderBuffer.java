@@ -5,7 +5,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 
 public class ReaderBuffer implements CharSequence {
-    public static final int defaultBufferSize = 4096;
     private int bufferSize;
     private char[][] buffers;
     private int length;

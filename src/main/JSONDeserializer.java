@@ -3,12 +3,12 @@ package main;
 import main.annotations.JSONIgnore;
 import main.annotations.JSONName;
 import main.utils.types.*;
-
 import java.lang.reflect.*;
-import java.time.*;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class JSONDeserializer {
+
 
     /**
      * Deserialize an object from its external JSON (string) representation.
@@ -54,6 +54,7 @@ public class JSONDeserializer {
         return deserialize(resultClass, null, json);
     }
 
+
     /**
      * Deserialize an object from its JSON representation.
      *
@@ -70,17 +71,6 @@ public class JSONDeserializer {
 
         Objects.requireNonNull(resultClass);
 
-        // is the target an Optional (or OptionalInt etc.)?
-        // (before the null check because null results in Optional.empty())
-
-        if (resultClass.equals(Optional.class))
-            return (T)deserializeOptional(typeArgs, json);
-        if (resultClass.equals(OptionalInt.class))
-            return (T)deserializeOptionalInt(json);
-        if (resultClass.equals(OptionalLong.class))
-            return (T)deserializeOptionalLong(json);
-        if (resultClass.equals(OptionalDouble.class))
-            return (T)deserializeOptionalDouble(json);
 
         // check for null
 
@@ -93,24 +83,8 @@ public class JSONDeserializer {
                 resultClass.isAssignableFrom(json.getClass()))
             return (T)json;
 
-        // does the target class have a "fromJSON()" method?
-        // questions:
-        // - should we require that the method be public?
-        // - should we look for method in include superclass?
-
-        try {
-            Method fromJSON = resultClass.getDeclaredMethod("fromJSON", JSONValue.class);
-            fromJSON.setAccessible(true);
-            if (Modifier.isStatic(fromJSON.getModifiers()) &&
-                    resultClass.isAssignableFrom(fromJSON.getReturnType())) {
-                return (T)fromJSON.invoke(null, json);
-            }
-        }
-        catch (NoSuchMethodException e) {
-            // ignore - this just means the result class doesn't have a fromJSON method
-        }
-        catch (Exception e) {
-            throw new JSONException("Custom deserialization failed for " + resultClass, e);
+        if (json instanceof JSONString && resultClass.equals(char.class)) {
+            return (T)Character.valueOf(((JSONString) json).get().charAt(0));
         }
 
         // is the JSON a string?
@@ -126,9 +100,6 @@ public class JSONDeserializer {
         // is the JSON a boolean?
 
         if (json instanceof JSONBoolean) {
-
-            // is the target Boolean?
-
             if (resultClass.equals(Boolean.class) || resultClass.equals(boolean.class))
                 return (T)Boolean.valueOf(((JSONBoolean)json).booleanValue());
 
@@ -167,14 +138,6 @@ public class JSONDeserializer {
             if (Collection.class.isAssignableFrom(resultClass))
                 return (T)deserializeCollection(resultClass, typeArgs, array);
 
-            // is the target a BitSet?
-
-            if (resultClass.equals(BitSet.class)) {
-                BitSet result = new BitSet();
-                for (int i = 0, n = array.size(); i < n; i++)
-                    result.set(array.getInt(i));
-                return (T)result;
-            }
 
             throw new JSONException("Can't deserialize array as " + resultClass);
 
@@ -215,8 +178,6 @@ public class JSONDeserializer {
 
         Objects.requireNonNull(resultClass);
 
-        // check for null
-
         if (s == null)
             return null;
 
@@ -246,126 +207,7 @@ public class JSONDeserializer {
         if (resultClass.isArray() && resultClass.getComponentType().equals(char.class))
             return (T)s.toCharArray();
 
-        // is the target class Calendar?
 
-        if (resultClass.equals(Calendar.class)) {
-            try {
-                return (T)ISO8601Date.decode(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize Calendar", e);
-            }
-        }
-
-        // is the target class Date?
-
-        if (resultClass.equals(Date.class)) {
-            try {
-                return (T)ISO8601Date.decode(s).getTime();
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize Date", e);
-            }
-        }
-
-        // is the target class Instant?
-
-        if (resultClass.equals(Instant.class)) {
-            try {
-                return (T)Instant.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize Instant", e);
-            }
-        }
-
-        // is the target class LocalDate?
-
-        if (resultClass.equals(LocalDate.class)) {
-            try {
-                return (T)LocalDate.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize LocalDate", e);
-            }
-        }
-
-        // is the target class LocalDateTime?
-
-        if (resultClass.equals(LocalDateTime.class)) {
-            try {
-                return (T)LocalDateTime.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize LocalDateTime", e);
-            }
-        }
-
-        // is the target class OffsetTime?
-
-        if (resultClass.equals(OffsetTime.class)) {
-            try {
-                return (T)OffsetTime.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize OffsetTime", e);
-            }
-        }
-
-        // is the target class OffsetDateTime?
-
-        if (resultClass.equals(OffsetDateTime.class)) {
-            try {
-                return (T)OffsetDateTime.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize OffsetDateTime", e);
-            }
-        }
-
-        // is the target class ZonedDateTime?
-
-        if (resultClass.equals(ZonedDateTime.class)) {
-            try {
-                return (T)ZonedDateTime.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize ZonedDateTime", e);
-            }
-        }
-
-        // is the target class Year?
-
-        if (resultClass.equals(Year.class)) {
-            try {
-                return (T)Year.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize Year", e);
-            }
-        }
-
-        // is the target class YearMonth?
-
-        if (resultClass.equals(YearMonth.class)) {
-            try {
-                return (T)YearMonth.parse(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize Year", e);
-            }
-        }
-
-        // is the target class UUID?
-
-        if (resultClass.equals(UUID.class)) {
-            try {
-                return (T)UUID.fromString(s);
-            }
-            catch (Exception e) {
-                throw new JSONException("Can't deserialize UUID", e);
-            }
-        }
 
         // is the target class an enum?
 
@@ -466,7 +308,6 @@ public class JSONDeserializer {
             T result = constructor.newInstance();
             for (Map.Entry<String, JSONValue> entry : object.entrySet()) {
                 String name = entry.getKey();
-                // TODO use setter method if available?
                 Field field = findField(resultClass, name);
                 if (field == null)
                     throw new JSONException("Can't find field for " + name);
@@ -490,7 +331,10 @@ public class JSONDeserializer {
         }
     }
 
-    private static Field findField(Class<?> resultClass, String name) {
+
+
+
+    public static Field findField(Class<?> resultClass, String name) {
         Field[] fields = resultClass.getDeclaredFields();
         for (Field field : fields) {
             JSONName nameAnnotation = field.getAnnotation(JSONName.class);
@@ -530,9 +374,16 @@ public class JSONDeserializer {
         Type[] valueTypeArgs = getGenericTypeArgs(valueType);
         try {
             Map<K, V> result = (Map<K, V>)mapClass.newInstance();
-            for (Map.Entry<String, JSONValue> entry : object.entrySet())
-                result.put(deserializeString(keyClass, entry.getKey()),
-                        deserialize(valueClass, valueTypeArgs, entry.getValue()));
+            for (Map.Entry<String, JSONValue> entry : object.entrySet()) {
+                K key = deserializeString(keyClass, entry.getKey());
+                V value = deserialize(valueClass, valueTypeArgs, entry.getValue());
+                if (key.toString().equals("type")) {
+                    Class<?> cls = Class.forName(value.toString());
+                    result = (Map<K, V>) cls.newInstance();
+                } else {
+                    result.put(key, value);
+                }
+            }
             return result;
         }
         catch (JSONException je) {
@@ -568,6 +419,31 @@ public class JSONDeserializer {
             Collection<T> result = (Collection<T>)collectionClass.newInstance();
             for (JSONValue value : array)
                 result.add(deserialize(itemClass, itemTypeArgs, value));
+            return result;
+        }
+        catch (JSONException je) {
+            throw je;
+        }
+        catch (Exception e) {
+            throw new JSONException("Can't instantiate " + collectionClass, e);
+        }
+    }
+
+    public static <T> Collection<T> deserializeCollection(Class<?> collectionClass,
+                                                          Type[] typeArgs, JSONArray array, Predicate<T> pred) {
+        if (typeArgs == null || typeArgs.length != 1)
+            throw new JSONException("Missing or incorrect type arguments for Collection");
+        Type itemType = typeArgs[0];
+        Class<T> itemClass = (Class<T>)getGenericClass(itemType);
+        Type[] itemTypeArgs = getGenericTypeArgs(itemType);
+        try {
+            Collection<T> result = (Collection<T>)collectionClass.newInstance();
+            for (JSONValue value : array) {
+                T elem = deserialize(itemClass, itemTypeArgs, value);
+                if (pred.test(elem)) {
+                    result.add(elem);
+                }
+            }
             return result;
         }
         catch (JSONException je) {
@@ -652,61 +528,6 @@ public class JSONDeserializer {
         for (int i = 0; i < n; i++)
             result[i] = deserialize(itemClass, array.get(i));
         return result;
-    }
-
-    /**
-     * Deserialize an {@link Optional}.
-     *
-     * @param   typeArgs    the actual types for the generic class
-     * @param   json        the JSON for the target object
-     * @return  the result {@link Optional}
-     * @throws  JSONException if the type arguments are incorrect or if the deserialization of
-     *          the target object throws an exception
-     */
-    public static Optional<?> deserializeOptional(Type[] typeArgs, JSONValue json) {
-        if (typeArgs == null || typeArgs.length != 1)
-            throw new JSONException("Missing or incorrect type arguments for Optional");
-        Type targetType = typeArgs[0];
-        Class<?> targetClass = getGenericClass(targetType);
-        Type[] targetTypeArgs = getGenericTypeArgs(targetType);
-        Object value = deserialize(targetClass, targetTypeArgs, json);
-        return value != null ? Optional.of(value) : Optional.empty();
-    }
-
-    /**
-     * Deserialize an {@link OptionalInt}.
-     *
-     * @param   json        the JSON for the target value
-     * @return  the result {@link OptionalInt}
-     * @throws  JSONException if the deserialization of the target value throws an exception
-     */
-    public static OptionalInt deserializeOptionalInt(JSONValue json) {
-        Integer value = deserialize(Integer.class, null, json);
-        return value != null ? OptionalInt.of(value) : OptionalInt.empty();
-    }
-
-    /**
-     * Deserialize an {@link OptionalLong}.
-     *
-     * @param   json        the JSON for the target value
-     * @return  the result {@link OptionalLong}
-     * @throws  JSONException if the deserialization of the target value throws an exception
-     */
-    public static OptionalLong deserializeOptionalLong(JSONValue json) {
-        Long value = deserialize(Long.class, null, json);
-        return value != null ? OptionalLong.of(value) : OptionalLong.empty();
-    }
-
-    /**
-     * Deserialize an {@link OptionalDouble}.
-     *
-     * @param   json        the JSON for the target value
-     * @return  the result {@link OptionalDouble}
-     * @throws  JSONException if the deserialization of the target value throws an exception
-     */
-    public static OptionalDouble deserializeOptionalDouble(JSONValue json) {
-        Double value = deserialize(Double.class, null, json);
-        return value != null ? OptionalDouble.of(value) : OptionalDouble.empty();
     }
 
     private static Class<?> getGenericClass(Type type) {

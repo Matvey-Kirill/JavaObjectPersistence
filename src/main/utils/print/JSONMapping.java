@@ -20,38 +20,6 @@ public class JSONMapping<V extends JSONValue> extends ListMap<String, V> impleme
         super(other);
     }
 
-    public String getString(String key) {
-        return JSON.getString((JSONValue)this.get(key));
-    }
-
-    public int getInt(String key) {
-        return JSON.getInt((JSONValue)this.get(key));
-    }
-
-    public long getLong(String key) {
-        return JSON.getLong((JSONValue)this.get(key));
-    }
-
-    public float getFloat(String key) {
-        return JSON.getFloat((JSONValue)this.get(key));
-    }
-
-    public double getDouble(String key) {
-        return JSON.getDouble((JSONValue)this.get(key));
-    }
-
-    public boolean getBoolean(String key) {
-        return JSON.getBoolean((JSONValue)this.get(key));
-    }
-
-    public JSONArray getArray(String key) {
-        return JSON.getArray((JSONValue)this.get(key));
-    }
-
-    public JSONObject getObject(String key) {
-        return JSON.getObject((JSONValue)this.get(key));
-    }
-
     public Iterator<String> iterator() {
         return this.keySet().iterator();
     }

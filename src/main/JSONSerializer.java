@@ -9,23 +9,11 @@ import main.utils.types.*;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.*;
 import java.util.*;
 
 public class JSONSerializer {
-
-    private static Class<?> kotlinSequenceInterface = null;
-
-    static {
-        try {
-            kotlinSequenceInterface = Class.forName("kotlin.sequences.Sequence");
-        }
-        catch (Exception e) {
-            // ignore - kotlin libraries not present
-        }
-    }
 
     /**
      * Private constructor.  A question for the future - do I want to allow options to be set on
@@ -37,8 +25,8 @@ public class JSONSerializer {
     /**
      * Create a JSON representation of any given object.
      *
-     * @param   object  the object
-     * @return  the JSON for that object
+     * @param object the object
+     * @return the JSON for that object
      */
     public static JSONValue serialize(Object object) {
 
@@ -51,22 +39,22 @@ public class JSONSerializer {
         // is it already a JSONValue?
 
         if (object instanceof JSONValue)
-            return (JSONValue)object;
+            return (JSONValue) object;
 
         // is it a CharSequence (e.g. String)?
 
         if (object instanceof CharSequence)
-            return new JSONString((CharSequence)object);
+            return new JSONString((CharSequence) object);
 
         // is is a Number?
 
         if (object instanceof Number)
-            return serializeNumberInternal(objectClass, (Number)object);
+            return serializeNumberInternal(objectClass, (Number) object);
 
         // is it a Boolean?
 
         if (objectClass.equals(Boolean.class))
-            return JSONBoolean.valueOf((Boolean)object);
+            return JSONBoolean.valueOf((Boolean) object);
 
         // is it a Character?
 
@@ -76,13 +64,13 @@ public class JSONSerializer {
         // is it an array of char?
 
         if (object instanceof char[])
-            return new JSONString(new String((char[])object));
+            return new JSONString(new String((char[]) object));
 
         // is it an Object array?
 
         if (object instanceof Object[]) {
             JSONArray jsonArray = new JSONArray();
-            for (Object item : (Object[])object)
+            for (Object item : (Object[]) object)
                 jsonArray.add(serialize(item));
             return jsonArray;
         }
@@ -92,24 +80,6 @@ public class JSONSerializer {
         if (objectClass.isArray())
             return serializeArray(object);
 
-        // does it have a "toJSON()" method?
-        // questions:
-        // - should we require that the method be public?
-        // - should we look for method in include superclass?
-
-        try {
-            Method toJSON = objectClass.getDeclaredMethod("toJSON");
-            toJSON.setAccessible(true);
-            if (JSONValue.class.isAssignableFrom(toJSON.getReturnType()))
-                return (JSONValue)toJSON.invoke(object);
-        }
-        catch (NoSuchMethodException e) {
-            // ignore - normal case
-        }
-        catch (Exception e) {
-            throw new JSONException("Custom serialization failed for " + objectClass.getName(),
-                    e);
-        }
 
         // is it an enum?
 
@@ -119,88 +89,14 @@ public class JSONSerializer {
         // is it an Iterable?
 
         if (object instanceof Iterable)
-            return serializeIterable((Iterable<?>)object);
+            return serializeIterable((Iterable<?>) object);
 
-        // is it a Kotlin Sequence?
-
-        if (kotlinSequenceInterface != null) {
-            if (kotlinSequenceInterface.isAssignableFrom(objectClass)) {
-                try {
-                    Method iterator = objectClass.getDeclaredMethod("iterator");
-                    if (Iterator.class.isAssignableFrom(iterator.getReturnType()))
-                        return serializeIterator((Iterator<?>)iterator.invoke(object));
-                }
-                catch (NoSuchMethodException ignore) {
-                }
-                catch (Exception e) {
-                    throw new JSONException(
-                            "Sequence serialization failed for " + objectClass.getName(), e);
-                }
-            }
-        }
 
         // is it a Map?
 
-        if (object instanceof Map)
-            return serializeMap((Map<?, ?>)object);
-
-        // is it an Enumeration?
-
-        if (object instanceof Enumeration)
-            return serializeEnumeration((Enumeration<?>)object);
-
-        // is it an Iterator?
-
-        if (object instanceof Iterator)
-            return serializeIterator((Iterator<?>)object);
-
-        // is it a Calendar?
-
-        if (object instanceof Calendar)
-            return serializeCalendar((Calendar)object);
-
-        // is it a Date?
-
-        if (object instanceof Date)
-            return serializeDate((Date)object);
-
-        // is it an Instant, LocalDate, LocalDateTime etc.?
-
-        if (objectClass.equals(Instant.class) ||
-                objectClass.equals(LocalDate.class) ||
-                objectClass.equals(LocalDateTime.class) ||
-                objectClass.equals(OffsetTime.class) ||
-                objectClass.equals(OffsetDateTime.class) ||
-                objectClass.equals(ZonedDateTime.class) ||
-                objectClass.equals(Year.class) ||
-                objectClass.equals(YearMonth.class) ||
-                objectClass.equals(UUID.class))
-            return new JSONString(object.toString());
-
-        // is it a BitSet?
-
-        if (object instanceof BitSet)
-            return serializeBitSet((BitSet)object);
-
-        // is it an Optional?
-
-        if (objectClass.equals(Optional.class))
-            return serializeOptional((Optional<?>)object);
-
-        // is it an OptionalInt?
-
-        if (objectClass.equals(OptionalInt.class))
-            return serializeOptionalInt((OptionalInt)object);
-
-        // is it an OptionalLong?
-
-        if (objectClass.equals(OptionalLong.class))
-            return serializeOptionalLong((OptionalLong)object);
-
-        // is it an OptionalDouble?
-
-        if (objectClass.equals(OptionalDouble.class))
-            return serializeOptionalDouble((OptionalDouble)object);
+        if (object instanceof Map) {
+            return serializeMap((Map<?, ?>) object, object.getClass().getName());
+        }
 
         // serialize it as an Object (this may not be a satisfactory default behaviour)
 
@@ -214,35 +110,20 @@ public class JSONSerializer {
      * Serialize an object to its external JSON representation.  This is a convenience method
      * to allow serialization to a string form in a single call.
      *
-     * @param   object  the object
-     * @return  the JSON for that object
+     * @param object the object
+     * @return the JSON for that object
      */
     public static String toJSON(Object object) {
         return serialize(object).toJSON();
     }
 
-    /**
-     * Serialize the various {@link Number} classes.
-     *
-     * @param   number  the {@link Number} object
-     * @return  the JSON for that object
-     */
-    public static JSONNumberValue serializeNumber(Number number) {
-
-        // is it null?
-
-        if (number == null)
-            return null;
-
-        return serializeNumberInternal(number.getClass(), number);
-    }
 
     /**
      * Serialize the various {@link Number} classes (skip null check).
      *
-     * @param   numberClass     the class of the number
-     * @param   number          the {@link Number}
-     * @return  the JSON for that object
+     * @param numberClass the class of the number
+     * @param number      the {@link Number}
+     * @return the JSON for that object
      */
     private static JSONNumberValue serializeNumberInternal(Class<?> numberClass,
                                                            Number number) {
@@ -286,52 +167,52 @@ public class JSONSerializer {
      * Serialize an array of primitive type (except for {@code char[]} which serializes as a
      * string).
      *
-     * @param   array   the array
-     * @return  the JSON for that array
-     * @throws  JSONException if the array can't be serialized
+     * @param array the array
+     * @return the JSON for that array
+     * @throws JSONException if the array can't be serialized
      */
     public static JSONArray serializeArray(Object array) {
 
         JSONArray jsonArray = new JSONArray();
 
         if (array instanceof int[]) {
-            for (int item : (int[])array)
+            for (int item : (int[]) array)
                 jsonArray.addValue(item);
             return jsonArray;
         }
 
         if (array instanceof long[]) {
-            for (long item : (long[])array)
+            for (long item : (long[]) array)
                 jsonArray.addValue(item);
             return jsonArray;
         }
 
         if (array instanceof boolean[]) {
-            for (boolean item : (boolean[])array)
+            for (boolean item : (boolean[]) array)
                 jsonArray.addValue(item);
             return jsonArray;
         }
 
         if (array instanceof double[]) {
-            for (double item : (double[])array)
+            for (double item : (double[]) array)
                 jsonArray.addValue(item);
             return jsonArray;
         }
 
         if (array instanceof float[]) {
-            for (float item : (float[])array)
+            for (float item : (float[]) array)
                 jsonArray.addValue(item);
             return jsonArray;
         }
 
         if (array instanceof short[]) {
-            for (short item : (short[])array)
+            for (short item : (short[]) array)
                 jsonArray.addValue(item);
             return jsonArray;
         }
 
         if (array instanceof byte[]) {
-            for (byte item : (byte[])array)
+            for (byte item : (byte[]) array)
                 jsonArray.addValue(item);
             return jsonArray;
         }
@@ -344,8 +225,8 @@ public class JSONSerializer {
     /**
      * Serialize a {@link Collection}.
      *
-     * @param   collection    the {@link Collection}
-     * @return  the JSON for that {@link Collection}
+     * @param collection the {@link Collection}
+     * @return the JSON for that {@link Collection}
      */
     public static JSONArray serializeCollection(Collection<?> collection) {
         JSONArray jsonArray = new JSONArray();
@@ -357,8 +238,8 @@ public class JSONSerializer {
     /**
      * Serialize a {@link List}.  Synonym for {@link #serializeCollection(Collection)}.
      *
-     * @param   list    the {@link List}
-     * @return  the JSON for that {@link List}
+     * @param list the {@link List}
+     * @return the JSON for that {@link List}
      */
     public static JSONArray serializeList(List<?> list) {
         return serializeCollection(list);
@@ -367,8 +248,8 @@ public class JSONSerializer {
     /**
      * Serialize a {@link Set}.  Synonym for {@link #serializeCollection(Collection)}.
      *
-     * @param   set     the {@link Set}
-     * @return  the JSON for that {@link Set}
+     * @param set the {@link Set}
+     * @return the JSON for that {@link Set}
      */
     public static JSONArray serializeSet(Set<?> set) {
         return serializeCollection(set);
@@ -379,49 +260,22 @@ public class JSONSerializer {
      * means of the {@link Object#toString() toString()} method), and the value is serialized
      * using this class.
      *
-     * @param   map     the {@link Map}
-     * @return  the JSON for that {@link Map}
+     * @param map the {@link Map}
+     * @return the JSON for that {@link Map}
      */
-    public static JSONObject serializeMap(Map<?, ?> map) {
+    public static JSONObject serializeMap(Map<?, ?> map, String type) {
         JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", serialize(type));
         for (Map.Entry<?, ?> entry : map.entrySet())
             jsonObject.put(entry.getKey().toString(), serialize(entry.getValue()));
         return jsonObject;
     }
 
     /**
-     * Serialize an {@link Enumeration}.  Note that this serialization is not symmetrical - it
-     * is not possible to deserialize an {@link Enumeration}.
-     *
-     * @param   e       the {@link Enumeration}
-     * @return  the JSON for that {@link Enumeration}
-     */
-    public static JSONArray serializeEnumeration(Enumeration<?> e) {
-        JSONArray jsonArray = new JSONArray();
-        while (e.hasMoreElements())
-            jsonArray.add(serialize(e.nextElement()));
-        return jsonArray;
-    }
-
-    /**
-     * Serialize an {@link Iterator}.  Note that this serialization is not symmetrical - it is
-     * not possible to deserialize an {@link Iterator}.
-     *
-     * @param   i       the {@link Iterator}
-     * @return  the JSON for that {@link Iterator}
-     */
-    public static JSONArray serializeIterator(Iterator<?> i) {
-        JSONArray jsonArray = new JSONArray();
-        while (i.hasNext())
-            jsonArray.add(serialize(i.next()));
-        return jsonArray;
-    }
-
-    /**
      * Serialize an {@link Iterable}.
      *
-     * @param   iterable    the {@link Iterable}
-     * @return  the JSON for that {@link Iterable}
+     * @param iterable the {@link Iterable}
+     * @return the JSON for that {@link Iterable}
      */
     public static JSONArray serializeIterable(Iterable<?> iterable) {
         JSONArray jsonArray = new JSONArray();
@@ -431,123 +285,11 @@ public class JSONSerializer {
     }
 
     /**
-     * Serialize a {@link Date}.
-     *
-     * @param   date    the {@link Date}
-     * @return  the JSON for that {@link Date}
-     */
-    public static JSONString serializeDate(Date date) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        return serializeCalendar(calendar);
-    }
-
-    /**
-     * Serialize a {@link Calendar}.
-     *
-     * @param   calendar    the {@link Calendar}
-     * @return  the JSON for that {@link Calendar}
-     */
-    public static JSONString serializeCalendar(Calendar calendar) {
-        StringBuilder sb = new StringBuilder();
-        try {
-            Strings.appendPositiveInt(sb, calendar.get(Calendar.YEAR));
-            sb.append('-');
-            Strings.append2Digits(sb, calendar.get(Calendar.MONTH) + 1);
-            sb.append('-');
-            Strings.append2Digits(sb, calendar.get(Calendar.DAY_OF_MONTH));
-            sb.append('T');
-            Strings.append2Digits(sb, calendar.get(Calendar.HOUR_OF_DAY));
-            sb.append(':');
-            Strings.append2Digits(sb, calendar.get(Calendar.MINUTE));
-            sb.append(':');
-            Strings.append2Digits(sb, calendar.get(Calendar.SECOND));
-            sb.append('.');
-            Strings.append3Digits(sb, calendar.get(Calendar.MILLISECOND));
-            int offset = calendar.get(Calendar.ZONE_OFFSET);
-            if (calendar.getTimeZone().inDaylightTime(calendar.getTime()))
-                offset += calendar.get(Calendar.DST_OFFSET);
-            offset /= 60 * 1000;
-            if (offset == 0)
-                sb.append('Z');
-            else {
-                if (offset < 0) {
-                    sb.append('-');
-                    offset = -offset;
-                }
-                else
-                    sb.append('+');
-                Strings.append2Digits(sb, offset / 60);
-                sb.append(':');
-                Strings.append2Digits(sb, offset % 60);
-            }
-        }
-        catch (IOException ioe) {
-            // can't happen - StringBuilder does not throw IOException
-        }
-        return new JSONString(sb);
-    }
-
-    /**
-     * Serialize a {@link BitSet}.
-     *
-     * @param   bitSet  the {@link BitSet}
-     * @return  the JSON for that {@link BitSet}
-     */
-    public static JSONArray serializeBitSet(BitSet bitSet) {
-        JSONArray array = new JSONArray();
-        for (int i = 0, n = bitSet.length(); i < n; i++)
-            if (bitSet.get(i))
-                array.addValue(i);
-        return array;
-    }
-
-    /**
-     * Serialize an {@link Optional}.
-     *
-     * @param   optional    the {@link Optional}
-     * @return  the JSON for that {@link Optional}
-     */
-    public static JSONValue serializeOptional(Optional<?> optional) {
-        return optional.isPresent() ? serialize(optional.get()) : null;
-    }
-
-    /**
-     * Serialize an {@link OptionalInt}.
-     *
-     * @param   optional    the {@link OptionalInt}
-     * @return  the JSON for that {@link OptionalInt}
-     */
-    public static JSONValue serializeOptionalInt(OptionalInt optional) {
-        return optional.isPresent() ? serialize(optional.getAsInt()) : null;
-    }
-
-    /**
-     * Serialize an {@link OptionalLong}.
-     *
-     * @param   optional    the {@link OptionalLong}
-     * @return  the JSON for that {@link OptionalLong}
-     */
-    public static JSONValue serializeOptionalLong(OptionalLong optional) {
-        return optional.isPresent() ? serialize(optional.getAsLong()) : null;
-    }
-
-    /**
-     * Serialize an {@link OptionalDouble}.
-     *
-     * @param   optional    the {@link OptionalDouble}
-     * @return  the JSON for that {@link OptionalDouble}
-     */
-    public static JSONValue serializeOptionalDouble(OptionalDouble optional) {
-        return optional.isPresent() ? serialize(optional.getAsDouble()) : null;
-    }
-
-    /**
      * Serialize an object.  This is a convenience method that bypasses some of the built-in
      * type checks, for cases where the object is known to require field-by-field serialization.
      *
-     * @param   object  the object
-     * @return  the JSON for that object
+     * @param object the object
+     * @return the JSON for that object
      */
     public static JSONObject serializeObject(Object object) {
         if (object == null)
@@ -562,10 +304,10 @@ public class JSONSerializer {
      * {@link JSONObject}.  This method first calls itself recursively to get the fields of the
      * superclass (if any), then iterates through the declared fields of the class.
      *
-     * @param   jsonObject      the destination {@link JSONObject}
-     * @param   objectClass     the {@link Class} object for the source
-     * @param   object          the source object
-     * @throws  JSONException on any errors accessing the fields
+     * @param jsonObject  the destination {@link JSONObject}
+     * @param objectClass the {@link Class} object for the source
+     * @param object      the source object
+     * @throws JSONException on any errors accessing the fields
      */
     private static void addFieldsToJSONObject(JSONObject jsonObject, Class<?> objectClass,
                                               Object object) {
@@ -602,44 +344,12 @@ public class JSONSerializer {
                     field.setAccessible(true);
                     Object value = field.get(object);
                     if (value != null) {
-                        if (value instanceof Optional) {
-                            Optional<?> optional = (Optional<?>)value;
-                            if (optional.isPresent())
-                                jsonObject.put(fieldName, serialize(optional.get()));
-                            else if (fieldAnnotated(field, JSONAlways.class))
-                                jsonObject.putNull(fieldName);
-                        }
-                        else if (value instanceof OptionalInt) {
-                            OptionalInt optional = (OptionalInt)value;
-                            if (optional.isPresent())
-                                jsonObject.putValue(fieldName, optional.getAsInt());
-                            else if (fieldAnnotated(field, JSONAlways.class))
-                                jsonObject.putNull(fieldName);
-                        }
-                        else if (value instanceof OptionalLong) {
-                            OptionalLong optional = (OptionalLong)value;
-                            if (optional.isPresent())
-                                jsonObject.putValue(fieldName, optional.getAsLong());
-                            else if (fieldAnnotated(field, JSONAlways.class))
-                                jsonObject.putNull(fieldName);
-                        }
-                        else if (value instanceof OptionalDouble) {
-                            OptionalDouble optional = (OptionalDouble)value;
-                            if (optional.isPresent())
-                                jsonObject.putValue(fieldName, optional.getAsDouble());
-                            else if (fieldAnnotated(field, JSONAlways.class))
-                                jsonObject.putNull(fieldName);
-                        }
-                        else
-                            jsonObject.put(fieldName, serialize(value));
-                    }
-                    else if (fieldAnnotated(field, JSONAlways.class))
+                        jsonObject.put(fieldName, serialize(value));
+                    } else if (fieldAnnotated(field, JSONAlways.class))
                         jsonObject.putNull(fieldName);
-                }
-                catch (JSONException e) {
+                } catch (JSONException e) {
                     throw e;
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     throw new JSONException("Error serializing " + objectClass.getName() + '.' +
                             fieldName);
                 }
@@ -653,8 +363,8 @@ public class JSONSerializer {
     /**
      * Test whether a field a marked with the {@code static} or {@code transient} modifiers.
      *
-     * @param   field   the {@link Field}
-     * @return  {@code true} if the field has the {@code static} or {@code transient} modifiers
+     * @param field the {@link Field}
+     * @return {@code true} if the field has the {@code static} or {@code transient} modifiers
      */
     private static boolean fieldStaticOrTransient(Field field) {
         int modifiers = field.getModifiers();
@@ -664,9 +374,9 @@ public class JSONSerializer {
     /**
      * Test whether a field is annotated with a nominated annotation class.
      *
-     * @param   field           the {@link Field}
-     * @param   annotationClass the annotation class
-     * @return  {@code true} if the field has the nominated annotation
+     * @param field           the {@link Field}
+     * @param annotationClass the annotation class
+     * @return {@code true} if the field has the nominated annotation
      */
     private static boolean fieldAnnotated(Field field,
                                           Class<? extends Annotation> annotationClass) {

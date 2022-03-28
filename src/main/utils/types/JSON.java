@@ -11,24 +11,6 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 
 public class JSON {
-    public static final String INVALID_CHAR_SEQ = "Invalid JSON character sequence";
-    public static final String EXCESS_CHARS = "Excess characters after JSON value";
-    public static final String ILLEGAL_KEY = "Illegal key in JSON object";
-    public static final String DUPLICATE_KEY = "Duplicate key in JSON object";
-    public static final String MISSING_COLON = "Missing colon in JSON object";
-    public static final String MISSING_CLOSING_BRACE = "Missing closing brace in JSON object";
-    public static final String MISSING_CLOSING_BRACKET = "Missing closing bracket in JSON array";
-    public static final String ILLEGAL_NUMBER = "Illegal JSON number";
-    public static final String ILLEGAL_SYNTAX = "Illegal JSON syntax";
-    public static final String ILLEGAL_STRING_TERM = "Unterminated JSON string";
-    public static final String ILLEGAL_STRING_CHAR = "Illegal character in JSON string";
-    public static final String ILLEGAL_STRING_UNICODE = "Illegal Unicode sequence in JSON string";
-    public static final String ILLEGAL_STRING_ESCAPE = "Illegal escape sequence in JSON string";
-    public static final String NOT_A_STRING = "Not a JSON string";
-    public static final String NOT_A_NUMBER = "Not a JSON number";
-    public static final String NOT_A_BOOLEAN = "Not a JSON boolean";
-    public static final String NOT_AN_ARRAY = "Not a JSON array";
-    public static final String NOT_AN_OBJECT = "Not a JSON object";
     public static final CharMapper charMapper = (codePoint) -> {
         if (codePoint == 34) {
             return "\\\"";
@@ -118,7 +100,7 @@ public class JSON {
 
         JSONValue var3;
         try {
-            var3 = parse((InputStream)is);
+            var3 = parse(is);
         } catch (Throwable var12) {
             var2 = var12;
             throw var12;
@@ -139,22 +121,13 @@ public class JSON {
 
         return var3;
     }
-
-    public static JSONArray parseArray(File f) throws IOException {
-        return (JSONArray)parse(f);
-    }
-
-    public static JSONObject parseObject(File f) throws IOException {
-        return (JSONObject)parse(f);
-    }
-
     public static JSONValue parse(File f, Charset charSet) throws IOException {
         InputStream is = new FileInputStream(f);
         Throwable var3 = null;
 
         JSONValue var4;
         try {
-            var4 = parse((InputStream)is, (Charset)charSet);
+            var4 = parse(is, charSet);
         } catch (Throwable var13) {
             var3 = var13;
             throw var13;
@@ -174,14 +147,6 @@ public class JSON {
         }
 
         return var4;
-    }
-
-    public static JSONArray parseArray(File f, Charset charSet) throws IOException {
-        return (JSONArray)parse(f, charSet);
-    }
-
-    public static JSONObject parseObject(File f, Charset charSet) throws IOException {
-        return (JSONObject)parse(f, charSet);
     }
 
     public static JSONValue parse(File f, String csName) throws IOException {
@@ -190,7 +155,7 @@ public class JSON {
 
         JSONValue var4;
         try {
-            var4 = parse((InputStream)is, (String)csName);
+            var4 = parse(is, csName);
         } catch (Throwable var13) {
             var3 = var13;
             throw var13;
@@ -212,21 +177,13 @@ public class JSON {
         return var4;
     }
 
-    public static JSONArray parseArray(File f, String csName) throws IOException {
-        return (JSONArray)parse(f, csName);
-    }
-
-    public static JSONObject parseObject(File f, String csName) throws IOException {
-        return (JSONObject)parse(f, csName);
-    }
-
     public static JSONValue parse(InputStream is) throws IOException {
         Reader rdr = new InputStreamReader(is);
         Throwable var2 = null;
 
         JSONValue var3;
         try {
-            var3 = parse((Reader)rdr);
+            var3 = parse(rdr);
         } catch (Throwable var12) {
             var2 = var12;
             throw var12;
@@ -246,14 +203,6 @@ public class JSON {
         }
 
         return var3;
-    }
-
-    public static JSONArray parseArray(InputStream is) throws IOException {
-        return (JSONArray)parse(is);
-    }
-
-    public static JSONObject parseObject(InputStream is) throws IOException {
-        return (JSONObject)parse(is);
     }
 
     public static JSONValue parse(InputStream is, Charset charSet) throws IOException {
@@ -284,21 +233,13 @@ public class JSON {
         return var4;
     }
 
-    public static JSONArray parseArray(InputStream is, Charset charSet) throws IOException {
-        return (JSONArray)parse(is, charSet);
-    }
-
-    public static JSONObject parseObject(InputStream is, Charset charSet) throws IOException {
-        return (JSONObject)parse(is, charSet);
-    }
-
     public static JSONValue parse(InputStream is, String csName) throws IOException {
         Reader rdr = new InputStreamReader(is, csName);
         Throwable var3 = null;
 
         JSONValue var4;
         try {
-            var4 = parse((Reader)rdr);
+            var4 = parse(rdr);
         } catch (Throwable var13) {
             var3 = var13;
             throw var13;
@@ -320,24 +261,8 @@ public class JSON {
         return var4;
     }
 
-    public static JSONArray parseArray(InputStream is, String csName) throws IOException {
-        return (JSONArray)parse(is, csName);
-    }
-
-    public static JSONObject parseObject(InputStream is, String csName) throws IOException {
-        return (JSONObject)parse(is, csName);
-    }
-
     public static JSONValue parse(Reader rdr) throws IOException {
-        return parse((CharSequence)(new ReaderBuffer(rdr)));
-    }
-
-    public static JSONArray parseArray(Reader rdr) throws IOException {
-        return (JSONArray)parse(rdr);
-    }
-
-    public static JSONObject parseObject(Reader rdr) throws IOException {
-        return (JSONObject)parse(rdr);
+        return parse(new ReaderBuffer(rdr));
     }
 
     public static JSONValue parse(CharSequence cs) {
@@ -348,14 +273,6 @@ public class JSON {
         } else {
             return result;
         }
-    }
-
-    public static JSONArray parseArray(CharSequence cs) {
-        return (JSONArray)parse(cs);
-    }
-
-    public static JSONObject parseObject(CharSequence cs) {
-        return (JSONObject)parse(cs);
     }
 
     public static JSONValue parse(ParseText p) {
@@ -463,14 +380,6 @@ public class JSON {
         }
     }
 
-    public static JSONArray parseArray(ParseText p) {
-        return (JSONArray)parse(p);
-    }
-
-    public static JSONObject parseObject(ParseText p) {
-        return (JSONObject)parse(p);
-    }
-
     private static String decodeString(ParseText p) {
         int start = p.getIndex();
 
@@ -567,57 +476,6 @@ public class JSON {
             return ((JSONString)value).toString();
         }
     }
-
-    public static int getInt(JSONValue value) {
-        if (value == null) {
-            return 0;
-        } else if (!(value instanceof Number)) {
-            throw new JSONException("Not a JSON number");
-        } else {
-            return ((Number)value).intValue();
-        }
-    }
-
-    public static long getLong(JSONValue value) {
-        if (value == null) {
-            return 0L;
-        } else if (!(value instanceof Number)) {
-            throw new JSONException("Not a JSON number");
-        } else {
-            return ((Number)value).longValue();
-        }
-    }
-
-    public static float getFloat(JSONValue value) {
-        if (value == null) {
-            return 0.0F;
-        } else if (!(value instanceof Number)) {
-            throw new JSONException("Not a JSON number");
-        } else {
-            return ((Number)value).floatValue();
-        }
-    }
-
-    public static double getDouble(JSONValue value) {
-        if (value == null) {
-            return 0.0D;
-        } else if (!(value instanceof Number)) {
-            throw new JSONException("Not a JSON number");
-        } else {
-            return ((Number)value).doubleValue();
-        }
-    }
-
-    public static boolean getBoolean(JSONValue value) {
-        if (value == null) {
-            return false;
-        } else if (!(value instanceof JSONBoolean)) {
-            throw new JSONException("Not a JSON boolean");
-        } else {
-            return ((JSONBoolean)value).booleanValue();
-        }
-    }
-
     public static JSONArray getArray(JSONValue value) {
         if (value == null) {
             return null;

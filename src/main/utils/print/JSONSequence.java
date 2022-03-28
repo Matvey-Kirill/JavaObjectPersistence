@@ -32,98 +32,11 @@ public class JSONSequence<V extends JSONValue> extends ArrayList<V> implements J
         super(collection);
     }
 
-    public String getString(int index) {
-        return JSON.getString((JSONValue)this.get(index));
-    }
-
-    public int getInt(int index) {
-        return JSON.getInt((JSONValue)this.get(index));
-    }
-
-    public long getLong(int index) {
-        return JSON.getLong((JSONValue)this.get(index));
-    }
-
-    public float getFloat(int index) {
-        return JSON.getFloat((JSONValue)this.get(index));
-    }
-
-    public double getDouble(int index) {
-        return JSON.getDouble((JSONValue)this.get(index));
-    }
-
-    public boolean getBoolean(int index) {
-        return JSON.getBoolean((JSONValue)this.get(index));
-    }
-
-    public JSONArray getArray(int index) {
-        return JSON.getArray((JSONValue)this.get(index));
-    }
-
-    public JSONObject getObject(int index) {
-        return JSON.getObject((JSONValue)this.get(index));
-    }
 
     public Iterable<String> strings() {
         return new Iterable<String>() {
             public Iterator<String> iterator() {
                 return JSONSequence.this.new StringIterator();
-            }
-        };
-    }
-
-    public Iterable<Integer> ints() {
-        return new Iterable<Integer>() {
-            public Iterator<Integer> iterator() {
-                return JSONSequence.this.new IntegerIterator();
-            }
-        };
-    }
-
-    public Iterable<Long> longs() {
-        return new Iterable<Long>() {
-            public Iterator<Long> iterator() {
-                return JSONSequence.this.new LongIterator();
-            }
-        };
-    }
-
-    public Iterable<Double> doubles() {
-        return new Iterable<Double>() {
-            public Iterator<Double> iterator() {
-                return JSONSequence.this.new DoubleIterator();
-            }
-        };
-    }
-
-    public Iterable<Float> floats() {
-        return new Iterable<Float>() {
-            public Iterator<Float> iterator() {
-                return JSONSequence.this.new FloatIterator();
-            }
-        };
-    }
-
-    public Iterable<Boolean> booleans() {
-        return new Iterable<Boolean>() {
-            public Iterator<Boolean> iterator() {
-                return JSONSequence.this.new BooleanIterator();
-            }
-        };
-    }
-
-    public Iterable<JSONArray> arrays() {
-        return new Iterable<JSONArray>() {
-            public Iterator<JSONArray> iterator() {
-                return JSONSequence.this.new ArrayIterator();
-            }
-        };
-    }
-
-    public Iterable<JSONObject> objects() {
-        return new Iterable<JSONObject>() {
-            public Iterator<JSONObject> iterator() {
-                return JSONSequence.this.new ObjectIterator();
             }
         };
     }
